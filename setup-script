@@ -19,9 +19,6 @@ mkdir -p /var/lib/webgen/{bin,documents,HTML}
 # Note: the path should be updated if running from a separate path
 cp /home/arch/2420-as3-p2-start/generate_index /var/lib/webgen/bin/
 
-# make it executable
-chmod +x /var/lib/webgen/bin/generate_index
-
 # change ownership of the webgen directory as currently root is the owner
 chown -R webgen:webgen /var/lib/webgen
 
@@ -36,8 +33,7 @@ timedatectl set-timezone America/Vancouver
 systemctl daemon-reload
 
 # start and enable the service file to generate the index.html page
-systemctl start generate-index.service || { echo "Failed to start generate-index.timer"; exit 1; }
-# if the service file fails, the script will stop here
+systemctl start generate-index.timer
 systemctl enable generate-index.timer
 
 # nginx was already installed earlier, so starting the service now
@@ -47,15 +43,23 @@ systemctl start nginx.service
 cp -f /home/arch/linux_assignment3/nginx.conf /etc/nginx/
 
 # create the directories inside /etc/nginx dirctory
-mkdir -p /etc/nginx/{sites-available,sites-enabled}
+mkdir -p /etc/nginx/{sites-available, sites-enabled}
 
 # copy the webgen_server in /etc/nginx/sites-available directory
-cp /home/arch/linux_assignment3/webgen_server /etc/nginx/sites-available/
+cp /home/arch/linux_assignment3/webgen_server /etc/nginx/sites-available
 
 # create the symbolic link
-ln -s /etc/nginx/sites-available/webgen_server /etc/nginx/sites-enabled/
+ln -s /etc/nginx/sites-available /etc/nginx/sites-enabled
 
-# start nginx to apply changes
-systemctl start nginx
+# reload nginx to apply changes
+systemctl reload nginx
+
+# install ufw
+pacman -S ufw
+
+# configure ufw
+ufw allow ssh
+ufw limit ssh
+ufw allow http
 
 

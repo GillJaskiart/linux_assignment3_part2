@@ -1,0 +1,61 @@
+#!/bin/bash
+
+# check if the script is run as root
+if ! [ $(id -u) = 0 ]; then
+	echo "Please run this script as root!"
+	exit 1
+fi
+
+# create webgen system user
+useradd -r -d /var/lib/webgen -s /usr/bin/nologin webgen
+
+# make the home directory for the webgen user
+mkdir /var/lib/webgen
+
+# make bin, documents and HTML directories inside the home directory of webgen system user
+mkdir -p /var/lib/webgen/{bin,documents,HTML}
+
+# copy the generate-index script inside the new bin folder in webgen's home directory
+# Note: the path should be updated if running from a separate path
+cp /home/arch/2420-as3-p2-start/generate_index /var/lib/webgen/bin/
+
+# make it executable
+chmod +x /var/lib/webgen/bin/generate_index
+
+# change ownership of the webgen directory as currently root is the owner
+chown -R webgen:webgen /var/lib/webgen
+
+# copy the provided generate-index.service and generate-index.timer in the correct directory
+cp /home/arch/linux_assignment3/generate-index.service /etc/systemd/system/
+cp /home/arch/linux_assignment3/generate-index.timer /etc/systemd/system/
+
+# set the timezone to PST from UTC, which is default
+timedatectl set-timezone America/Vancouver
+
+# reload daemon
+systemctl daemon-reload
+
+# start and enable the service file to generate the index.html page
+systemctl start generate-index.service || { echo "Failed to start generate-index.timer"; exit 1; }
+# if the service file fails, the script will stop here
+systemctl enable generate-index.timer
+
+# nginx was already installed earlier, so starting the service now
+systemctl start nginx.service
+
+# copy the nginx.conf in the /etc/nginx directory. Use -f option to replace the existing one.
+cp -f /home/arch/linux_assignment3/nginx.conf /etc/nginx/
+
+# create the directories inside /etc/nginx dirctory
+mkdir -p /etc/nginx/{sites-available,sites-enabled}
+
+# copy the webgen_server in /etc/nginx/sites-available directory
+cp /home/arch/linux_assignment3/webgen_server /etc/nginx/sites-available/
+
+# create the symbolic link
+ln -s /etc/nginx/sites-available/webgen_server /etc/nginx/sites-enabled/
+
+# start nginx to apply changes
+systemctl start nginx
+
+

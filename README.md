@@ -43,7 +43,7 @@ Rest of the setting can be default.
 
 `ssh` into both the droplets in separate windows of the terminal and run the following commands:
 
-```
+```bash
 sudo pacman -Syu 
 sudo pacman -S neovim git nginx
 ```
